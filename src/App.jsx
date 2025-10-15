@@ -3,11 +3,11 @@ import { Routes, Route, Link } from "react-router-dom";
 
 // --- Mock Data for Games ---
 const games = [
-  { id: 1, name: "Wordle", image: "https://tse2.mm.bing.net/th/id/OIP.tl30bG2F-Q2yNo-lITHJEAHaEK?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3", link: "/wordle" },
-  { id: 2, name: "WAM", imawge: "https://tse2.mm.bing.net/th/id/OIP.xYufzTNhbdMIGNnirsb7RgAAAA?cb=12&w=256&h=256&rs=1&pid=ImgDetMain&o=7&rm=3", link: "/wam" },
-  { id: 3, name: "Pong", image: "https://logodix.com/logo/1021657.png", link: "/pong" },
-  { id: 4, name: "Geometric Dash", image: "https://th.bing.com/th/id/R.2a527448abbb085f6c89793cfb5f65f5?rik=A7ss82CSOJPrkg&riu=http%3a%2f%2fvignette2.wikia.nocookie.net%2fgeometry-dash%2fimages%2f9%2f90%2fGeometryDash.png%2frevision%2flatest%3fcb%3d20160224042843&ehk=Hvk2rFdCmF08iQinZYieMsLbvo4NDNdKYic8xB6GqZE%3d&risl=&pid=ImgRaw&r=0", link: "/geometricdash" },
-  { id: 5, name: "Cards", image: "https://plays.org/wp-content/uploads/kids-memory-match.png", link: "/cards" },
+  { id: 1, name: "Wordle", image: "https://tse2.mm.bing.net/th/id/OIP.tl30bG2F-Q2yNo-lITHJEAHaEK?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3", link: "wordle.html" },
+  { id: 2, name: "WAM", imawge: "https://tse2.mm.bing.net/th/id/OIP.xYufzTNhbdMIGNnirsb7RgAAAA?cb=12&w=256&h=256&rs=1&pid=ImgDetMain&o=7&rm=3", link: "wam.html" },
+  { id: 3, name: "Pong", image: "https://logodix.com/logo/1021657.png", link: "pong.html" },
+  { id: 4, name: "Geometric Dash", image: "https://th.bing.com/th/id/R.2a527448abbb085f6c89793cfb5f65f5?rik=A7ss82CSOJPrkg&riu=http%3a%2f%2fvignette2.wikia.nocookie.net%2fgeometry-dash%2fimages%2f9%2f90%2fGeometryDash.png%2frevision%2flatest%3fcb%3d20160224042843&ehk=Hvk2rFdCmF08iQinZYieMsLbvo4NDNdKYic8xB6GqZE%3d&risl=&pid=ImgRaw&r=0", link: "Geometricdash.html" },
+  { id: 5, name: "Cards", image: "https://plays.org/wp-content/uploads/kids-memory-match.png", link: "Cards.html" },
 ];
 
 // --- Reusable Components ---
