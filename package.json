@@ -2,7 +2,7 @@
   "name": "homepage",
   "private": true,
   "version": "0.0.0",
-  "homepage": "https://github.com/divpaste/webtechgames.git",
+  "homepage": "https://divpaste.github.io/webtechgames",
   "type": "module",
   "scripts": {
     "dev": "vite",
