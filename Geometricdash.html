@@ -1,0 +1,300 @@
+<html>
+<head>
+  <title>Geometric Dash — Clone</title>
+  <style>
+    :root {
+      --bg1: #001220;
+      --bg2: #004aad;
+      --ground: #0f0f0f;
+      --accent: #00d9ff;
+      --player: #ffd000;
+      --obstacle: #ff0054;
+      --font: "Poppins", system-ui, sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: var(--font);
+      background: linear-gradient(180deg, var(--bg1), var(--bg2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      overflow: hidden;
+    }
+
+    .game-wrap {
+      width: 900px;
+      max-width: 95vw;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      backdrop-filter: blur(8px);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin: 0;
+      background: linear-gradient(90deg, #00f5ff, #ff00c3);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 1px;
+    }
+
+    .controls {
+      font-size: 13px;
+      color: #ddd;
+    }
+
+    canvas {
+      display: block;
+      background: radial-gradient(circle at center, #011, #001);
+      border-radius: 6px;
+      width: 100%;
+      height: 220px;
+      touch-action: none;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      color: #ccc;
+    }
+
+    .btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: #00ffff;
+      transform: translateY(-2px);
+    }
+
+    footer {
+      font-size: 12px;
+      color: #888;
+      text-align: center;
+      padding-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-wrap" role="application">
+    <header>
+      <h1>Geometric Dash</h1>
+      <div class="controls">Jump: <strong>Space / ↑</strong> • Tap to Play</div>
+    </header>
+    <canvas id="game" width="900" height="220"></canvas>
+    <div class="hud">
+      <div>Score: <span id="score">0</span></div>
+      <div>Speed: <span id="speed">1.0</span>x</div>
+      <button id="restart" class="btn">Restart</button>
+    </div>
+  </div>
+  <script>
+    (() => {
+      const canvas = document.getElementById('game');
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width;
+      const H = canvas.height;
+      const scoreEl = document.getElementById('score');
+      const speedEl = document.getElementById('speed');
+      const restartBtn = document.getElementById('restart');
+      let running = false; //  game loop running
+      let gameOver = false; // player hit obstacle
+      let lastTime = 0; // last frame timestamp
+      let spawnTimer = 0; // obstacle spawn timer
+      let score = 0; 
+      let speedMultiplier = 1; 
+      const groundY = H - 40; 
+      const groundHeight = 40; 
+      const obstacles = [];
+const player = {
+  x: 80,
+  y: groundY - 40,
+  w: 40, // player width
+  h: 40, // player height
+  vy: 0, // vertical velocity
+  gravity: 2300,    // higher = faster fall
+  jumpVel: -750,    // higher = higher jump
+  grounded: true,
+  color: getComputedStyle(document.documentElement).getPropertyValue("--player"),
+  hitboxShrink: 0.7 // 0 to 1 || 1= whole box size, 0=point
+};
+function collides(p, o) {
+  const shrink = (1 - p.hitboxShrink) / 2;
+  const px = p.x + p.w * shrink;
+  const py = p.y + p.h * shrink; // top left corner of hitbox
+  const pw = p.w * p.hitboxShrink; 
+  const ph = p.h * p.hitboxShrink; 
+  return (
+    // collision check
+    px < o.x + o.w &&
+    px + pw > o.x && 
+    py < o.y + o.h && 
+    py + ph > o.y 
+  );
+}
+      const obstacleTypes = [
+        
+        { w: 25, h: 45, color: getComputedStyle(document.documentElement).getPropertyValue("--obstacle") },
+        { w: 35, h: 55, color: getComputedStyle(document.documentElement).getPropertyValue("--obstacle") }
+      ];
+      function rand(min, max) { return Math.random() * (max - min) + min; }
+      window.addEventListener('keydown', e => {
+        if (e.code === 'Space' || e.code === 'ArrowUp') jump();
+      });
+      canvas.addEventListener('mousedown', () => {
+        if (!running) start();
+        jump();
+      });
+      restartBtn.addEventListener('click', () => start());
+      function jump() {
+        if (gameOver) return;
+        if (!running) start();
+        if (player.grounded) {
+          player.vy = player.jumpVel;
+          player.grounded = false;
+        }
+      }
+      function start() {
+        // reset game 
+        running = true;
+        gameOver = false;
+        lastTime = performance.now();
+        spawnTimer = 0;
+        score = 0;
+        speedMultiplier = 1;
+        obstacles.length = 0;
+        player.y = groundY - player.h;
+        player.vy = 0;
+        loop(lastTime);
+      }
+      function spawnObstacle() {
+        const proto = obstacleTypes[Math.floor(rand(0, obstacleTypes.length))];
+        const o = {
+          // spawn right off screen
+          x: W + 30,
+          y: groundY - proto.h,
+          w: proto.w,
+          h: proto.h,
+          color: proto.color
+        };
+        obstacles.push(o);
+      }
+      function update(dt) {
+        if (gameOver || !running) return;
+        score += dt * 10 * speedMultiplier; // score inc
+        scoreEl.textContent = Math.floor(score);
+        speedMultiplier = 1 + Math.min(score / 800, 2.5); // max 3.5x speed
+        speedEl.textContent = speedMultiplier.toFixed(2);
+        spawnTimer -= dt * 1000;
+        const baseGap = 900 - (speedMultiplier * 150);
+        if (spawnTimer <= 0) {
+          spawnObstacle();
+          spawnTimer = rand(baseGap * 0.6, baseGap * 1.3);
+        }
+        player.vy += player.gravity * dt;
+        player.y += player.vy * dt;
+        if (player.y >= groundY - player.h) {
+          player.y = groundY - player.h;
+          player.vy = 0;
+          player.grounded = true;
+        }
+        const speed = 420 * speedMultiplier;
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+          const o = obstacles[i];
+          o.x -= speed * dt;
+          if (o.x + o.w < -20) obstacles.splice(i, 1);
+          if (collides(player, o)) endGame();
+        }
+      }
+      function collides(p, o) {
+        return p.x < o.x + o.w && p.x + p.w > o.x && p.y < o.y + o.h && p.y + p.h > o.y; 
+      }
+      function endGame() {
+        gameOver = true;
+        running = false;
+        draw();
+        ctx.save();
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 24px Poppins";
+        ctx.textAlign = "center";
+        ctx.fillText("Game Over", W / 2, H / 2 - 10);
+        ctx.font = "16px Poppins";
+        ctx.fillText("Click Restart or Tap to Try Again", W / 2, H / 2 + 20);
+        ctx.restore();
+      }
+      function draw() {
+        ctx.clearRect(0, 0, W, H);
+        const grad = ctx.createLinearGradient(0, 0, 0, H);
+        grad.addColorStop(0, "#00112a");
+        grad.addColorStop(1, "#002c55");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+        const gGrad = ctx.createLinearGradient(0, groundY, 0, H);
+        gGrad.addColorStop(0, "#111");
+        gGrad.addColorStop(1, "#0ff2");
+        ctx.fillStyle = gGrad;
+        ctx.fillRect(0, groundY, W, groundHeight);
+        for (const o of obstacles) {
+          ctx.shadowColor = o.color;
+          ctx.shadowBlur = 10;
+          ctx.fillStyle = o.color;
+          ctx.fillRect(Math.round(o.x), Math.round(o.y), o.w, o.h);
+          ctx.shadowBlur = 0;
+        }
+        ctx.save();
+        ctx.translate(Math.round(player.x), Math.round(player.y));
+        ctx.fillStyle = player.color;
+        ctx.shadowColor = "#fff";
+        ctx.shadowBlur = 10;
+        ctx.fillRect(0, 0, player.w, player.h);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "#000";
+        ctx.fillRect(8, 10, 6, 6);
+        ctx.fillRect(player.w - 14, 10, 6, 6);
+        ctx.fillRect(10, player.h - 12, 20, 4);
+        ctx.restore();
+        ctx.fillStyle = "#fff";
+        ctx.font = "16px Poppins";
+        ctx.textAlign = "right";
+        ctx.fillText("Score: " + Math.floor(score), W - 12, 24);
+      }
+      function loop(ms) {
+        const dt = Math.min((ms - lastTime) / 1000, 0.033);
+        lastTime = ms;
+        update(dt);
+        draw();
+        if (running) requestAnimationFrame(loop);
+      }
+      draw();
+    })();
+  </script>
+</body>
+</html>

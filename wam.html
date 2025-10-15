@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Whack-a-Mole Game</title>
+    <style>
+        * {
+            margin: 0;
+            box-sizing: border-box;
+            user-select: none;
+            font-family: "Poppins", sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #c6f6c6, #a5d6a7);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-area {
+            display: grid;
+            grid-template-columns: 30% 70%;
+            width: 90%;
+            height: 80vh;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        }
+
+        /* LEFT PANEL */
+        #left {
+            background-color: #2e7d32;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding: 30px;
+        }
+
+        #left h1 {
+            font-size: 2rem;
+            text-align: center;
+        }
+
+        #left a {
+            color: #fff176;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        #create {
+            height: 80px;
+            width: 150px;
+            border-radius: 40px;
+            border: none;
+            background-color: #ffcc80;
+            color: #4e342e;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
+
+        #create:hover {
+            background-color: #ffb74d;
+            transform: scale(1.05);
+        }
+
+        /* RIGHT PANEL (GRID) */
+        #grid-container {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 25px;
+            padding: 40px;
+            background-color: #e8f5e9;
+            justify-items: center;
+            align-items: center;
+        }
+
+        .cell {
+            background-color: #ffffff;
+            width: 160px;
+            height: 160px;
+            border-radius: 25px;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .cell img {
+            width: 120px;  /* Bigger mole */
+            height: 120px;
+            pointer-events: none;
+            animation: molePop 0.5s ease-in-out;
+        }
+
+        .cell:hover {
+            transform: scale(1.05);
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.3); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-area">
+        <div id="left">
+            <h1>🎯 SCOREBOARD</h1>
+            <h1>Hits: <a id="hits-counter">0</a></h1>
+            <h1>Miss: <a id="miss-counter">0</a></h1>
+            <button id="create" type="button" onclick="startGame()">Start Game</button>
+        </div>
+
+        <div id="right">
+            <div id="grid-container">
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let hits = 0;
+        let miss = 0;
+        let timer = 900;
+        let gameOver = false;
+        let moleImage = "https://media.istockphoto.com/id/645546840/vector/cute-cartoon-groundhod.jpg?s=612x612&w=0&k=20&c=3sYH_HW5z5iNLmXGQjIlxbcj-cOazfgjv5r-E9b3Y8g="; //mole img
+
+        const cells = document.querySelectorAll(".cell");
+        const hitscount = document.getElementById("hits-counter");
+        const misscount = document.getElementById("miss-counter");
+
+        cells.forEach(cell => {
+            cell.addEventListener("click", function(event) {
+                if (gameOver) return;
+
+                const mole = cell.querySelector("img");
+                if (mole) {
+                    // HIT
+                    hits++;
+                    hitscount.innerText = hits;
+                    cell.style.backgroundColor = "#98f39b";
+                    mole.remove();
+                    timer = Math.max(300, timer - 10);
+                } else {
+                    // MISS
+                    miss++;
+                    misscount.innerText = miss;
+                    cell.style.backgroundColor = "#f8b0b8";
+                    setTimeout(() => cell.style.backgroundColor = "#ffffff", 300);
+                    timer += 30;
+                    if (miss >= 5) {
+                        gameOver = true;
+                        alert("Game Over!!! Your score: " + hits);
+                    }
+                }
+            });
+        });
+
+        function randomizeMatrix() {
+            if (gameOver) return;
+
+            // clear all cells
+            cells.forEach(cell => {
+                cell.innerHTML = "";
+                cell.style.backgroundColor = "#ffffff";
+            });
+
+            // choose random cell
+            const index = Math.floor(Math.random() * cells.length);
+            const mole = document.createElement("img");
+            mole.src = moleImage;
+            cells[index].appendChild(mole);
+
+            setTimeout(() => {
+                if (gameOver) return;
+                if (cells[index].querySelector("img")) {
+                    cells[index].innerHTML = "";
+                    miss++;
+                    misscount.innerText = miss;
+                    if (miss >= 5) {
+                        gameOver = true;
+                        alert("Game Over! 🐹 Your score: " + hits);
+                        return;
+                    }
+                }
+            }, timer);
+
+            setTimeout(randomizeMatrix, timer);
+        }
+
+        function startGame() {
+            hits = 0;
+            miss = 0;
+            timer = 900;
+            gameOver = false;
+            hitscount.innerText = hits;
+            misscount.innerText = miss;
+            randomizeMatrix();
+        }
+    </script>
+</body>
+</html>
