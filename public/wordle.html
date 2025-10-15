@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+
+<head>
+    <title>Document</title>
+    <style>
+        * {
+            margin: 0px;
+            box-sizing: border-box;
+            user-select: none;
+            font-family: 'Franklin Gothic Medium';
+            font-weight: bold;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            margin-top: 25px;
+            gap: 25px;
+            background-color: #121213;
+            align-items: center;
+            /* background-color: #000; */
+        }
+
+        #heading {
+            color: white;
+            font-size: 40px;
+            letter-spacing: 5px;
+        }
+
+        #canvas {
+            table-layout: fixed;
+            height: 500px;
+            width: 400px;
+            border-spacing: 8px;
+        }
+
+        .active {
+            border: 3px solid #565758 !important;
+            background-color: #eee;
+            color: white;
+        }
+
+        #canvas td {
+            border-radius: 5px;
+            background-color: #121213;
+            border: 3px solid #3a3a3c;
+            height: 45px;
+            width: 45px;
+            font-size: 50px;
+            text-align: center;
+            line-height: 35px;
+        }
+
+        #grid-container {
+            display: grid;
+            align-items: center;
+            grid-template-columns: auto auto;
+            gap: 50px;
+        }
+
+        #keyboard {
+            table-layout: fixed;
+            width: 600px;
+            border-collapse: separate;
+            border-spacing: 5px;
+            text-align: center;
+        }
+
+        #keyboard tr {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        #keyboard td {
+            border: 2px solid black;
+            border-radius: 5px;
+            background-color: aliceblue;
+            width: 50px;
+            height: 50px;
+            font-size: 30px;
+            font-family: monospace;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pressed {
+            animation: pop 0.25s ease;
+        }
+
+        .appear {
+            animation: up 0.25s;
+        }
+
+        @keyframes up {
+            0% {
+                transform: scale(1);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pop {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.5);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .correct-index {
+            background-color: #6ca965 !important;
+            animation: flipp 1s ease;
+            border: none !important;
+            color: white;
+        }
+
+        .key-correct-index {
+            background-color: #6ca965 !important;
+            border: none !important;
+            color: white;
+        }
+
+        .wrong-index {
+            background-color: #c8b653 !important;
+            animation: flipp 1s ease;
+            border: none !important;
+            color: white;
+        }
+
+        .key-wrong-index {
+            background-color: #c8b653 !important;
+            border: none !important;
+            color: white;
+        }
+
+        .wrong-letter {
+            background-color: #787c7f !important;
+            animation: flipp 1s ease;
+            border: none !important;
+            color: white;
+        }
+
+        .key-wrong-letter {
+            background-color: #787c7f !important;
+            border: none !important;
+            color: white;
+        }
+
+        @keyframes flipp {
+            0% {
+                transform: rotateX(0deg);
+            }
+
+            50% {
+                transform: rotateX(90deg);
+            }
+
+            100% {
+                transform: rotateX(0deg);
+            }
+        }
+
+
+        #menu-area {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            align-items: center;
+        }
+
+        #controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 50px;
+            border: 2px solid white;
+            border-radius: 20px;
+        }
+
+        #reset {
+            background-color: aliceblue;
+            border: none;
+            height: 40px;
+            width: 545px !important;
+            font-size: 18px;
+            border-radius: 5px;
+            width: 80px;
+            margin-bottom: 10px;
+            font-size: 30px;
+            font-family: Monospace;
+        }
+
+        #popup {
+            position: fixed;
+            z-index: 99;
+            height: 50px;
+            width: auto;
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            color: black;
+            font-family: 'Trebuchet MS', sans-serif;
+            font-weight: bold;
+            font-size: 10px;
+            top: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+        }
+
+        .shake {
+            animation: shake 0.1s ease;
+            animation-iteration-count: 4;
+        }
+
+        @keyframes shake {
+            0% {
+                transform: translateX(0);
+            }
+
+            50% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(0px);
+            }
+
+            100% {
+                transform: translateX(5px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1 id="heading">WORDLE - <span style="color:#6ca965">C</span><span style="color:#c8b653">LO</span><span
+            style="color:#787c7f">NE</span>
+    </h1>
+    <div id="popup">
+        <h1 id="popup-info"></h1>
+    </div>
+    <div id="grid-container">
+        <div>
+            <table id="canvas">
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </table>
+        </div>
+        <div id="menu-area">
+            <div id="controls">
+                <table id="keyboard">
+                    <tr>
+                        <td>Q</td>
+                        <td>W</td>
+                        <td>E</td>
+                        <td>R</td>
+                        <td>T</td>
+                        <td>Y</td>
+                        <td>U</td>
+                        <td>I</td>
+                        <td>O</td>
+                        <td>P</td>
+                    </tr>
+                    <tr>
+                        <td>A</td>
+                        <td>S</td>
+                        <td>D</td>
+                        <td>F</td>
+                        <td>G</td>
+                        <td>H</td>
+                        <td>J</td>
+                        <td>K</td>
+                        <td>L</td>
+                    </tr>
+                    <tr>
+                        <td id="enter"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30"
+                                fill="currentColor" class="bi bi-arrow-return-left" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd"
+                                    d="M14.5 1.5a.5.5 0 0 1 .5.5v4.8a2.5 2.5 0 0 1-2.5 2.5H2.707l3.347 3.346a.5.5 0 0 1-.708.708l-4.2-4.2a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 8.3H12.5A1.5 1.5 0 0 0 14 6.8V2a.5.5 0 0 1 .5-.5" />
+                            </svg></td>
+                        <td>Z</td>
+                        <td>X</td>
+                        <td>C</td>
+                        <td>V</td>
+                        <td>B</td>
+                        <td>N</td>
+                        <td>M</td>
+                        <td id="backspace">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor"
+                                class="bi bi-arrow-left" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd"
+                                    d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8" />
+                            </svg>
+                        </td>
+                    </tr>
+                </table>
+                <button id="reset">RESET</button>
+            </div>
+            <div>
+                <h2 style="color:white; text-align:center;">Game Stats</h2>
+                <canvas id="guessChart" width="200" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let count = 0, row = 0;
+    const table = document.getElementById("canvas");
+    const keyboard = document.getElementById("keyboard");
+    const enterKey = document.getElementById("enter");
+    const backspaceKey = document.getElementById("backspace");
+    const popup = document.getElementById("popup");
+    const popupInfo = document.getElementById("popup-info");
+    const reset = document.getElementById("reset");
+    let wins = 0;
+    let losses = 0;
+    let winLossChart;
+    let word = [];
+    let wordList = [];
+    let gameOver = false;
+    let isResetting = false;
+    fetch('words.json')
+        .then(response => response.json())
+        .then(data => {
+            wordList = data.map(w => w.toUpperCase());
+            word = data[Math.floor(Math.random() * data.length)].toUpperCase();
+            startGame();
+            updateWinLossChart();
+        })
+        .catch(error => {
+            console.log("Error: " + error);
+        });
+
+    function updateWinLossChart() {
+        const ctx = document.getElementById("guessChart").getContext("2d");
+
+        const data = {
+            labels: ["Wins", "Losses"],
+            datasets: [{
+                data: [wins, losses],
+                backgroundColor: ["#6ca965", "#787c7f"],
+                borderColor: "white",
+                borderWidth: 2
+            }]
+        };
+
+        const config = {
+            type: "pie",
+            data: data,
+            options: {
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: "white",
+                            font: {
+                                size: 14
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        if (winLossChart) {
+            winLossChart.destroy();
+        }
+
+        winLossChart = new Chart(ctx, config);
+    }
+
+
+    function resetGame() {
+        isResetting = true;
+        document.removeEventListener('keydown', rKeyboardInput);
+        reset.removeEventListener('click', resetGame);
+        count = 0;
+        row = 0;
+        gameOver = false;
+        popup.style.opacity = "0";
+        document.querySelectorAll('#canvas td').forEach(cell => {
+            cell.innerText = "";
+            cell.className = "";
+        });
+        keyboard.querySelectorAll("td").forEach(key => {
+            key.classList.remove("pressed", "key-correct-index", "key-wrong-index", "key-wrong-letter");
+        });
+        word = wordList[Math.floor(Math.random() * wordList.length)].toUpperCase();
+        console.log("Resetting Word");
+        isResetting = false;
+        startGame();
+    }
+
+    function rKeyboardInput(e) {
+        if (gameOver || isResetting) return;
+        if (/^[a-z]$/i.test(e.key)) {
+            e.preventDefault();
+            if (count < 5 && row < 6) {
+                const cell = table.rows[row].cells[count];
+                cell.innerText = e.key.toUpperCase();
+                cell.classList.add("appear");
+                cell.classList.add("active");
+                setTimeout(() => cell.classList.remove("appear"), 500);
+                count++;
+                keyboard.querySelectorAll("td").forEach(td => {
+                    if (td.innerText === e.key.toUpperCase()) {
+                        td.classList.add("pressed");
+                        setTimeout(() => td.classList.remove("pressed"), 400);
+                    }
+                });
+            }
+        }
+        else if (e.key === "Backspace") {
+            e.preventDefault();
+            if (count > 0) {
+                count--;
+                const cell = table.rows[row].cells[count];
+                cell.innerText = "";
+                cell.classList.remove("active");
+                backspaceKey.classList.add("pressed");
+                setTimeout(() => backspaceKey.classList.remove("pressed"), 300);
+            }
+        }
+        else if (e.key === "Enter") {
+            e.preventDefault();
+            if (count < 5) {
+                popupInfo.innerHTML = "Not enough letters";
+                popup.style.opacity = "1";
+                table.rows[row].classList.add("shake");
+                setTimeout(() => {
+                    popup.style.opacity = "0";
+                    table.rows[row].classList.remove("shake");
+                }, 800)
+                return;
+            }
+            let guess = "";
+            for (let i = 0; i < 5; i++) {
+                guess += table.rows[row].cells[i].innerText.toUpperCase();
+            }
+            if (!wordList.includes(guess)) {
+                popupInfo.innerHTML = "Not in word list";
+                popup.style.opacity = "1";
+                table.rows[row].classList.add("shake");
+                setTimeout(() => {
+                    popup.style.opacity = "0";
+                    table.rows[row].classList.remove("shake");
+                }, 800)
+                return;
+            }
+            if (count === 5 && row <= 5) {
+                let wordCopy = word.split("");
+                let status = [0, 0, 0, 0, 0];
+
+                for (let i = 0; i < 5; i++) {
+                    let cell = table.rows[row].cells[i];
+                    let keyElement = Array.from(keyboard.querySelectorAll("td"))
+                        .find(k => k.innerText.toUpperCase() === cell.innerText);
+                    setTimeout(() => {
+                        if (cell.innerText === word[i]) {
+                            cell.classList.add("correct-index");
+                            keyElement.classList.add("key-correct-index");
+                            status[i] = 1;
+                            wordCopy[i] = null;
+                        } else if (wordCopy.includes(cell.innerText)) {
+                            cell.classList.add("wrong-index");
+                            keyElement.classList.add("key-wrong-index");
+                            wordCopy[wordCopy.indexOf(cell.innerText)] = null;
+                        } else {
+                            cell.classList.add("wrong-letter");
+                            keyElement.classList.add("key-wrong-letter");
+                        }
+                    }, i * 250);
+                }
+
+                setTimeout(() => {
+                    if (status.every(i => i === 1)) {
+                        wins++;
+                        updateWinLossChart();
+                        popupInfo.innerHTML = "You Won! The word was: " + word;
+                        popup.style.opacity = "1";
+                        gameOver = true;
+                    } else if (row === 5) {
+                        losses++;
+                        updateWinLossChart();
+                        popupInfo.innerHTML = "Game Over! The word was: " + word;
+                        popup.style.opacity = "1";
+                        gameOver = true;
+                    }
+                    row++;
+                    count = 0;
+                }, 2300);
+
+                enterKey.classList.add("pressed");
+                setTimeout(() => enterKey.classList.remove("pressed"), 300);
+            }
+        }
+    }
+
+    function startGame() {
+        document.addEventListener('keydown', rKeyboardInput);
+        reset.addEventListener('click', resetGame);
+    };
+
+    keyboard.querySelectorAll("td").forEach(key => {
+        if (gameOver || isResetting) return;
+        key.addEventListener("click", (e) => {
+            if (key.id === "enter") {
+                e.preventDefault();
+                if (count < 5) {
+                    popupInfo.innerHTML = "Not enough letters";
+                    popup.style.opacity = "1";
+                    table.rows[row].classList.add("shake");
+                    setTimeout(() => {
+                        popup.style.opacity = "0";
+                        table.rows[row].classList.remove("shake");
+                    }, 800)
+                    return;
+                }
+                let guess = "";
+                for (let i = 0; i < 5; i++) {
+                    guess += table.rows[row].cells[i].innerText.toUpperCase();
+                }
+                if (!wordList.includes(guess)) {
+                    popupInfo.innerHTML = "Not in word list";
+                    popup.style.opacity = "1";
+                    table.rows[row].classList.add("shake");
+                    setTimeout(() => {
+                        popup.style.opacity = "0";
+                        table.rows[row].classList.remove("shake");
+                    }, 800)
+                    return;
+                }
+                if (count === 5 && row <= 5) {
+                    let wordCopy = word.split("");
+                    let status = [0, 0, 0, 0, 0];
+
+                    for (let i = 0; i < 5; i++) {
+                        let cell = table.rows[row].cells[i];
+                        let keyElement = Array.from(keyboard.querySelectorAll("td"))
+                            .find(k => k.innerText.toUpperCase() === cell.innerText);
+                        setTimeout(() => {
+                            if (cell.innerText === word[i]) {
+                                cell.classList.add("correct-index");
+                                keyElement.classList.add("key-correct-index");
+                                status[i] = 1;
+                                wordCopy[i] = null;
+                            } else if (wordCopy.includes(cell.innerText)) {
+                                cell.classList.add("wrong-index");
+                                keyElement.classList.add("key-wrong-index");
+                                wordCopy[wordCopy.indexOf(cell.innerText)] = null;
+                            } else {
+                                cell.classList.add("wrong-letter");
+                                keyElement.classList.add("key-wrong-letter");
+                            }
+                        }, i * 250);
+                    }
+
+                    setTimeout(() => {
+                        if (status.every(i => i === 1)) {
+                            wins++;
+                            popupInfo.innerHTML = "You Won! The word was: " + word;
+                            popup.style.opacity = "1";
+                            gameOver = true;
+                        } else if (row === 5) {
+                            losses++;
+                            popupInfo.innerHTML = "Game Over! The word was: " + word;
+                            popup.style.opacity = "1";
+                            gameOver = true;
+                        }
+                        row++;
+                        count = 0;
+                    }, 2300);
+
+                    enterKey.classList.add("pressed");
+                    setTimeout(() => enterKey.classList.remove("pressed"), 300);
+                }
+            }
+            else if (key.id === "backspace") {
+                if (count > 0) {
+                    count--;
+                    const cell = table.rows[row].cells[count];
+                    cell.innerText = "";
+                    cell.classList.remove("active");
+                    backspaceKey.classList.add("pressed");
+                    setTimeout(() => backspaceKey.classList.remove("pressed"), 300);
+                }
+            }
+            else if (/^[a-z]$/i.test(key.innerText)) {
+                e.preventDefault();
+                if (count < 5 && row < 6) {
+                    const cell = table.rows[row].cells[count];
+                    cell.innerText = key.innerText;
+                    cell.classList.add("appear");
+                    cell.classList.add("active");
+                    setTimeout(() => cell.classList.remove("appear"), 500);
+                    count++;
+
+                    key.classList.add("pressed");
+                    setTimeout(() => key.classList.remove("pressed"), 400);
+                }
+            }
+        });
+    });
+
+</script>
+</html>

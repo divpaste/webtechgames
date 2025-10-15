@@ -1,0 +1,286 @@
+<html>
+<head>
+  <title>Pong</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link href="https://fonts.cdnfonts.com/css/minecraftia" rel="stylesheet">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #000;
+      color: #fff;
+      font-family: 'Minecraftia', monospace;
+      overflow: hidden;
+    }
+    #gameCanvas {
+      display: block;
+      margin: 0 auto;
+      background: #000;
+    }
+    #topControls {
+      position: absolute;
+      top: 10px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 40px;
+      z-index: 50;
+    }
+    button {
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 16px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 10px #fff;
+    }
+    #scoreBoard {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 28px;
+      font-weight: 700;
+      z-index: 50;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 4px 14px;
+      border-radius: 8px;
+    }
+    #difficultyControls {
+      position: absolute;
+      top: 130px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      z-index: 50;
+    }
+    .speedBtn {
+      padding: 6px 18px;
+      border-radius: 8px;
+    }
+    #normalBtn { background: #66ff99; }
+    #nightmareBtn { background: #ffcc00; }
+    #hellBtn { background: #ff4444; color: #fff; }
+    #gameOverModal {
+      display: flex;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 999;
+      justify-content: center;
+      align-items: center;
+    }
+    #gameOverContent {
+      background: rgba(24,24,24,0.95);
+      padding: 28px 36px;
+      border-radius: 14px;
+      text-align: center;
+      box-shadow: 0 6px 30px rgba(0,0,0,0.6);
+      min-width: 280px;
+    }
+    #gameOverContent h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      letter-spacing: .5px;
+    }
+    #gameOverContent p {
+      margin: 0 0 18px;
+      font-size: 20px;
+      color: #ddd;
+    }
+    #playAgainBtn {
+      display: inline-block;
+      padding: 10px 22px;
+      font-size: 18px;
+      border-radius: 10px;
+      border: none;
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <div id="topControls">
+    <button id="resetBtn">Reset Ball</button>
+    <button id="fullscreenBtn">Fullscreen</button>
+  </div>
+  <div id="scoreBoard">0 : 0</div>
+  <div id="difficultyControls">
+    <button class="speedBtn" id="normalBtn">Normal</button>
+    <button class="speedBtn" id="nightmareBtn">Nightmare</button>
+    <button class="speedBtn" id="hellBtn">Hell</button>
+  </div>
+  <div id="gameOverModal">
+    <div id="gameOverContent">
+      <h1 id="gameOverTitle">PONG</h1>
+      <p id="winnerText">Press Play to start!</p>
+      <button id="playAgainBtn">Play</button>
+    </div>
+  </div>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const resetBtn = document.getElementById("resetBtn");
+    const fullscreenBtn = document.getElementById("fullscreenBtn");
+    const scoreBoard = document.getElementById("scoreBoard");
+    const gameOverModal = document.getElementById("gameOverModal");
+    const winnerText = document.getElementById("winnerText");
+    const playAgainBtn = document.getElementById("playAgainBtn");
+    const normalBtn = document.getElementById("normalBtn");
+    const nightmareBtn = document.getElementById("nightmareBtn");
+    const hellBtn = document.getElementById("hellBtn");
+    let leftScore = 0, rightScore = 0;
+    const maxScore = 10;
+    let gameOver = true;
+    let baseSpeed = 6;
+    let difficultyScale = 1.0;
+    const leftPaddle = { x: 20, y: 100 };
+    const rightPaddle = { x: 0, y: 100 };
+    let paddleWidth, paddleHeight, ballRadius, paddleSpeed, ball = null;
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      updateSizes();
+    }
+    window.addEventListener("resize", resizeCanvas);
+    function updateSizes() {
+      paddleWidth = Math.max(8, canvas.width * 0.02);
+      paddleHeight = Math.max(40, canvas.height * 0.15);
+      ballRadius = Math.max(6, canvas.width * 0.012);
+      paddleSpeed = Math.max(6, canvas.height * 0.02 * difficultyScale);
+    }
+    function resetBall() {
+      if (gameOver) return;
+      ball = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        dx: (Math.random() > 0.5 ? 1 : -1) * baseSpeed * difficultyScale,
+        dy: (Math.random() * 4 - 2) * difficultyScale
+      };
+    }
+    fullscreenBtn.addEventListener("click", () => {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    });
+    const keys = {};
+    document.addEventListener("keydown", e => keys[e.key] = true);
+    document.addEventListener("keyup", e => keys[e.key] = false);
+    resetBtn.addEventListener("click", resetBall);
+    function update() {
+      if (gameOver || !ball) return;
+      rightPaddle.x = canvas.width - paddleWidth - 20;
+      if (keys["w"]) leftPaddle.y -= paddleSpeed;
+      if (keys["s"]) leftPaddle.y += paddleSpeed;
+      if (keys["ArrowUp"]) rightPaddle.y -= paddleSpeed;
+      if (keys["ArrowDown"]) rightPaddle.y += paddleSpeed;
+      leftPaddle.y = Math.max(0, Math.min(canvas.height - paddleHeight, leftPaddle.y));
+      rightPaddle.y = Math.max(0, Math.min(canvas.height - paddleHeight, rightPaddle.y));
+      ball.x += ball.dx;
+      ball.y += ball.dy;
+      if (ball.y - ballRadius < 0 || ball.y + ballRadius > canvas.height) {
+        ball.dy *= -1;
+      }
+      if (ball.x - ballRadius < leftPaddle.x + paddleWidth &&
+          ball.y > leftPaddle.y && ball.y < leftPaddle.y + paddleHeight) {
+        ball.dx = Math.abs(ball.dx) * 1.08;
+        const hitPos = (ball.y - (leftPaddle.y + paddleHeight / 2)) / (paddleHeight / 2);
+        ball.dy += hitPos * 2;
+        ball.x = leftPaddle.x + paddleWidth + ballRadius;
+      }
+      if (ball.x + ballRadius > rightPaddle.x &&
+          ball.y > rightPaddle.y && ball.y < rightPaddle.y + paddleHeight) {
+        ball.dx = -Math.abs(ball.dx) * 1.08;
+        const hitPos = (ball.y - (rightPaddle.y + paddleHeight / 2)) / (paddleHeight / 2);
+        ball.dy += hitPos * 2;
+        ball.x = rightPaddle.x - ballRadius;
+      }
+      if (ball.x < 0) {
+        rightScore++;
+        checkGameOver();
+        resetBall();
+      } else if (ball.x > canvas.width) {
+        leftScore++;
+        checkGameOver();
+        resetBall();
+      }
+      scoreBoard.textContent = `${leftScore} : ${rightScore}`;
+    }
+    function checkGameOver() {
+      if (leftScore >= maxScore || rightScore >= maxScore) {
+        gameOver = true;
+        const winner = leftScore >= maxScore ? "Left Player" : "Right Player";
+        showGameOver(`${winner} Wins!`);
+      }
+    }
+    function showGameOver(text) {
+      winnerText.textContent = text;
+      gameOverModal.style.display = "flex";
+      keys["w"] = keys["s"] = keys["ArrowUp"] = keys["ArrowDown"] = false;
+    }
+    playAgainBtn.addEventListener("click", () => {
+      leftScore = 0;
+      rightScore = 0;
+      scoreBoard.textContent = `${leftScore} : ${rightScore}`;
+      gameOver = false;
+      gameOverModal.style.display = "none";
+      resetBall();
+    });
+    normalBtn.addEventListener("click", () => {
+      difficultyScale = 1.7;
+      baseSpeed = 6;
+      resetBall();
+    });
+    nightmareBtn.addEventListener("click", () => {
+      difficultyScale = 2.2;
+      baseSpeed = 7;
+      resetBall();
+    });
+    hellBtn.addEventListener("click", () => {
+      difficultyScale = 3.5;
+      baseSpeed = 8;
+      resetBall();
+    });
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "#555";
+      ctx.setLineDash([10, 14]);
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, 0);
+      ctx.lineTo(canvas.width / 2, canvas.height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = "#ddd";
+      ctx.fillRect(leftPaddle.x, leftPaddle.y, paddleWidth, paddleHeight);
+      ctx.fillRect(rightPaddle.x, rightPaddle.y, paddleWidth, paddleHeight);
+      if (ball) {
+        ctx.fillStyle = "#bbb";
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+    resizeCanvas();
+    leftPaddle.y = (canvas.height - (canvas.height * 0.15)) / 2;
+    rightPaddle.y = leftPaddle.y;
+    loop();
+  </script>
+</body>
+</html>
