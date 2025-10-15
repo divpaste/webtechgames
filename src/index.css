@@ -13,8 +13,7 @@
 
 body {
   font-family: 'Press Start 2P', cursive;
-  /* background-color: var(--dark-bg); */
-  background-color : white;
+  background-color: var(--dark-bg);
   color: #fff;
   overflow-x: hidden;
   /* Add initial state for page load animation */
